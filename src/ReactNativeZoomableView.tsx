@@ -41,7 +41,7 @@ const initialState = {
 class ReactNativeZoomableView extends Component<
   ReactNativeZoomableViewProps,
   ReactNativeZoomableViewState
-> {
+  > {
   zoomSubjectWrapperRef: RefObject<View>;
   gestureHandlers: any;
   doubleTapFirstTapReleaseTimestamp: number;
@@ -186,12 +186,12 @@ class ReactNativeZoomableView extends Component<
       const boundOffset =
         contentSize && containerSize
           ? applyPanBoundariesToOffset(
-              offset,
-              containerSize,
-              contentSize,
-              this.zoomLevel,
-              this.props.panBoundaryPadding
-            )
+          offset,
+          containerSize,
+          contentSize,
+          this.zoomLevel,
+          this.props.panBoundaryPadding
+          )
           : offset;
 
       if (
@@ -372,16 +372,16 @@ class ReactNativeZoomableView extends Component<
    * @private
    */
   _handlePanResponderGrant = (e, gestureState) => {
-    if (this.props.onLongPress) {
-      this.longPressTimeout = setTimeout(() => {
-        this.props.onLongPress?.(
-          e,
-          gestureState,
-          this._getZoomableViewEventObject()
-        );
-        this.longPressTimeout = null;
-      }, this.props.longPressDuration);
-    }
+    // if (this.props.onLongPress) {
+    //   this.longPressTimeout = setTimeout(() => {
+    //     this.props.onLongPress?.(
+    //       e,
+    //       gestureState,
+    //       this._getZoomableViewEventObject()
+    //     );
+    //     this.longPressTimeout = null;
+    //   }, this.props.longPressDuration);
+    // }
 
     this.props.onPanResponderGrant?.(
       e,
@@ -411,35 +411,45 @@ class ReactNativeZoomableView extends Component<
 
     this.lastGestureCenterPosition = null;
 
-    getPanMomentumDecayAnim(this.panAnim, {
-      x: gestureState.vx / this.zoomLevel,
-      y: gestureState.vy / this.zoomLevel,
-    }).start();
-
-    if (this.longPressTimeout) {
-      clearTimeout(this.longPressTimeout);
-      this.longPressTimeout = null;
+    console.log(`${this.gestureType}`);
+    if (this.gestureType == 'pinch') {
+      getPanMomentumDecayAnim(this.panAnim, {
+        x: gestureState.vx / this.zoomLevel,
+        y: gestureState.vy / this.zoomLevel,
+      }).start(() => {
+        this.props.onPanResponderEnd?.(
+          e,
+          gestureState,
+          this._getZoomableViewEventObject()
+        );
+      });
     }
 
-    this.props.onPanResponderEnd?.(
-      e,
-      gestureState,
-      this._getZoomableViewEventObject()
-    );
+    // if (this.longPressTimeout) {
+    //   clearTimeout(this.longPressTimeout);
+    //   this.longPressTimeout = null;
+    // }
 
-    if (this.gestureType === 'pinch') {
-      this.props.onZoomEnd?.(
-        e,
-        gestureState,
-        this._getZoomableViewEventObject()
-      );
-    } else if (this.gestureType === 'shift') {
-      this.props.onShiftingEnd?.(
-        e,
-        gestureState,
-        this._getZoomableViewEventObject()
-      );
-    }
+    // this.props.onPanResponderEnd?.(
+    //   e,
+    //   gestureState,
+    //   this._getZoomableViewEventObject()
+    // );
+    //
+    // if (this.gestureType === 'pinch') {
+    //   this.props.onZoomEnd?.(
+    //     e,
+    //     gestureState,
+    //     this._getZoomableViewEventObject()
+    //   );
+    // }
+    // else if (this.gestureType === 'shift') {
+    //   this.props.onShiftingEnd?.(
+    //     e,
+    //     gestureState,
+    //     this._getZoomableViewEventObject()
+    //   );
+    // }
 
     this.gestureType = null;
     this.gestureStarted = false;
@@ -471,7 +481,7 @@ class ReactNativeZoomableView extends Component<
 
     // Only supports 2 touches and below,
     // any invalid number will cause the gesture to end.
-    if (gestureState.numberActiveTouches <= 2) {
+    if (gestureState.numberActiveTouches === 2) {
       if (!this.gestureStarted) {
         this._handlePanResponderGrant(e, gestureState);
       }
@@ -483,12 +493,18 @@ class ReactNativeZoomableView extends Component<
     }
 
     if (gestureState.numberActiveTouches === 2) {
-      if (this.longPressTimeout) {
-        clearTimeout(this.longPressTimeout);
-        this.longPressTimeout = null;
-      }
+      // if (this.longPressTimeout) {
+      //   clearTimeout(this.longPressTimeout);
+      //   this.longPressTimeout = null;
+      // }
 
       // change some measurement states when switching gesture to ensure a smooth transition
+      let touchDistance = calcGestureTouchDistance(e, gestureState);
+      console.log(`distance = ${Math.abs(this.lastGestureTouchDistance - touchDistance)}`)
+      if (Math.abs(this.lastGestureTouchDistance - touchDistance) > 2) {
+      } else {
+
+      }
       if (this.gestureType !== 'pinch') {
         this.lastGestureCenterPosition = calcGestureCenterPoint(
           e,
@@ -502,27 +518,24 @@ class ReactNativeZoomableView extends Component<
       this.gestureType = 'pinch';
       this._handlePinching(e, gestureState);
     } else if (gestureState.numberActiveTouches === 1) {
-      if (
-        this.longPressTimeout &&
-        (Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5)
-      ) {
-        clearTimeout(this.longPressTimeout);
-        this.longPressTimeout = null;
-      }
+      // if (this.longPressTimeout && (Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5)) {
+      //   clearTimeout(this.longPressTimeout);
+      //   this.longPressTimeout = null;
+      // }
       // change some measurement states when switching gesture to ensure a smooth transition
-      if (this.gestureType !== 'shift') {
-        this.lastGestureCenterPosition = calcGestureCenterPoint(
-          e,
-          gestureState
-        );
-      }
-
-      const { dx, dy } = gestureState;
-      const isShiftGesture = Math.abs(dx) > 2 || Math.abs(dy) > 2;
-      if (isShiftGesture) {
-        this.gestureType = 'shift';
-        this._handleShifting(gestureState);
-      }
+      // if (this.gestureType !== 'shift') {
+      //   this.lastGestureCenterPosition = calcGestureCenterPoint(
+      //     e,
+      //     gestureState
+      //   );
+      // }
+      //
+      // const { dx, dy } = gestureState;
+      // const isShiftGesture = Math.abs(dx) > 2 || Math.abs(dy) > 2;
+      // if (isShiftGesture) {
+      //   this.gestureType = 'shift';
+      //   this._handleShifting(gestureState);
+      // }
     }
   };
 
@@ -1011,18 +1024,18 @@ class ReactNativeZoomableView extends Component<
           {this.props.children}
         </Animated.View>
         {this.props.visualTouchFeedbackEnabled &&
-          this.state.touches?.map((touch) => {
-            const animationDuration = this.props.doubleTapDelay;
-            return (
-              <AnimatedTouchFeedback
-                x={touch.x}
-                y={touch.y}
-                key={touch.id}
-                animationDuration={animationDuration}
-                onAnimationDone={() => this._removeTouch(touch)}
-              />
-            );
-          })}
+        this.state.touches?.map((touch) => {
+          const animationDuration = this.props.doubleTapDelay;
+          return (
+            <AnimatedTouchFeedback
+              x={touch.x}
+              y={touch.y}
+              key={touch.id}
+              animationDuration={animationDuration}
+              onAnimationDone={() => this._removeTouch(touch)}
+            />
+          );
+        })}
         {/* For Debugging Only */}
         {(this.state.debugPoints || []).map(({ x, y }, index) => {
           return <DebugTouchPoint key={index} x={x} y={y} />;
