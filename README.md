@@ -3,7 +3,7 @@
 A view component for react-native with pinch to zoom, tap to move and double tap to zoom capability.
 You can zoom everything, from normal images, text and more complex nested views.
 
-This library is a fork of [@openspacelabs/react-native-zoomable-view](https://www.npmjs.com/package/@dudigital/react-native-zoomable-view).
+This library is a fork of [@openspacelabs/react-native-zoomable-view](https://github.com/openspacelabs/react-native-zoomable-view).
 We've rewritten most of the logic in the original library to address the following items:
 
 - [x] Fixed jittering during zooming and panning
